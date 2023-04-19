@@ -1,0 +1,14 @@
+name = 'aiken-lang/gift_card'
+version = '0.0.0'
+license = 'Apache-2.0'
+description = "Create a gift card that can be used to redeem locked assets"
+
+[repository]
+user = 'aiken-lang'
+project = 'gift_card'
+platform = 'github'
+
+[[dependencies]]
+name = 'aiken-lang/stdlib'
+version = 'main'
+source = 'github'
