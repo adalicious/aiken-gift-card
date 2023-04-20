@@ -10,8 +10,8 @@ import { useCallback, useEffect, useState } from "react";
 export async function getServerSideProps() {
   // Gets the env variables for Kupo and Ogmios URL
   const ENV = {
-    KUPO_URL: process.env.KUPO_RUL as string,
-    OGMIOS_URL: process.env.OGMIOS_URL as string,
+    KUPO_URL: process.env.KUPO_RUL as string || 'https://kupo-preprod-api-alala-f98d7b.us1.demeter.builders',
+    OGMIOS_URL: process.env.OGMIOS_URL as string || 'wss://ogmios-preprod-api-alala-f98d7b.us1.demeter.builders',
     NETWORK: (process.env.NETWORK as string) || "Preprod",
   };
 
