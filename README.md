@@ -44,7 +44,9 @@ Setup the required ENV variables for initializing Lucid with Kupos and Ogmios. I
 `KUPO_RUL`
 `OGMIOS_URL`
 
-The project is pre configured to work against the `Preprod` Network.
+You also need to setup a secret for signing you redeem codes 
+
+`SIGNING_SECRET`
 
 Once you configuration is set you can start the project:
 
@@ -73,7 +75,7 @@ Once confirmed you will get the `tx hash` and a `redeem code`
 
 <img src="public/ada-locked.png" alt="ada-locked">
 
-Copy the redeem code. You can share this code for redeemer the gift card. This token has an expiration of 1 hour. If the gift card is not redeemed in within the hour you will not be able to unlock it.
+Copy the redeem code. You can share this code for redeeming the gift card. This token has an expiration of 1 hour. If the gift card is not redeemed in within the hour you will not be able to unlock it.
 
 ### Redeem Gift Card
 
@@ -81,7 +83,7 @@ For redeeming a gift card paste the generated code in the token input field of t
 
 <img src="public/redeem.png" alt="redeem">
 
-Press the `REDEEM GIFT CARD` button. You will be prompted to sign the transaction and the ADA will be unlocked to your wallet. The application will shot the `tx hash` of the generated transaction.
+Press the `REDEEM GIFT CARD` button. You will be prompted to sign the transaction and the ADA will be unlocked to your wallet. The application will show the `tx hash` of the generated transaction.
 
 <img src="public/redeemed.png" alt="redeemed">
 
