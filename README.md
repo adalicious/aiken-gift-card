@@ -55,7 +55,36 @@ npm run dev
 
 You can access the front-end application in your browser at `localhost:3000` 
 
-<img src="public/screenshot.png" width="600" alt="screenshot">
+<img src="public/home.png"  alt="home">
+
+### Create Gift Card
+
+For creating a Gift Card first you need to input a name for your token so you can make the contracts:
+
+<img src="public/make-contracts.png" alt="make-contracts">
+
+Once the contracts are applied you will get the Gift Card and Redeem Scripts and you can select how much ADA you want to lock into the gift card
+
+<img src="public/lock-ada.png" alt="lock-ada">
+
+Once you are ready press the `CREATE GIFT CARD` button. You will be prompted to sign the transaction and the app will wait for the tx to be confirmed. 
+
+Once confirmed you will get the `tx hash` and a `redeem code`
+
+<img src="public/ada-locked.png" alt="ada-locked">
+
+Copy the redeem code. You can share this code for redeemer the gift card. This token has an expiration of 1 hour. If the gift card is not redeemed in within the hour you will not be able to unlock it.
+
+### Redeem Gift Card
+
+For redeeming a gift card paste the generated code in the token input field of the home page and press the `REDEEM GIFT CARD` button.
+
+<img src="public/redeem.png" alt="redeem">
+
+Press the `REDEEM GIFT CARD` button. You will be prompted to sign the transaction and the ADA will be unlocked to your wallet. The application will shot the `tx hash` of the generated transaction.
+
+<img src="public/redeemed.png" alt="redeemed">
+
 
 
 ## License
