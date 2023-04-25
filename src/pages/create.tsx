@@ -1,19 +1,16 @@
-/* eslint-disable @next/next/no-img-element */
-import { postGenerateToken } from "@/backend";
 import { TextField } from "@/components/Input";
 import { AppliedValidators, Validators, applyParams, readValidators } from "@/utils";
 import { Constr, Data, Kupmios, Lucid, Network, fromText } from "lucid-cardano";
 import type { NextPage } from "next";
-import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 
+const BASE_URL = "http://localhost:3000/redeem";
+
 export async function getServerSideProps() {
-  // Gets the env variables for Kupo and Ogmios URL
   const ENV = {
-    KUPO_URL: (process.env.KUPO_RUL as string),
-    OGMIOS_URL: (process.env.OGMIOS_URL as string),
-    NETWORK: (process.env.NETWORK as string),
-    SIGNING_SECRET: process.env.SIGNING_SECRET as string,
+    KUPO_URL: process.env.KUPO_RUL as string,
+    OGMIOS_URL: process.env.OGMIOS_URL as string,
+    NETWORK: process.env.NETWORK as string,
   };
 
   const validators = readValidators();
@@ -33,8 +30,9 @@ type State = {
   lockTxHash: string | undefined;
   waitingLockTx: boolean;
   parameterizedContracts: AppliedValidators | null;
-  jwt: string | undefined;
-  signingSecret: string;
+  utxoTxHash: string | undefined;
+  utxoOutputIndex: number | undefined;
+  url: string | undefined;
   error: string | undefined;
 };
 
@@ -42,7 +40,6 @@ const Home: NextPage<{
   ENV: Record<string, string>;
   validators: Validators;
 }> = ({ ENV, validators }) => {
-  const router = useRouter();
 
   const [state, setState] = useState<State>({
     lucid: undefined,
@@ -51,8 +48,9 @@ const Home: NextPage<{
     lockTxHash: undefined,
     waitingLockTx: false,
     parameterizedContracts: null,
-    jwt: undefined,
-    signingSecret: ENV.SIGNING_SECRET,
+    utxoTxHash: undefined,
+    utxoOutputIndex: undefined,
+    url: undefined,
     error: undefined,
   });
 
@@ -80,9 +78,11 @@ const Home: NextPage<{
   const submitTokenName = async (e: Event) => {
     e.preventDefault();
 
+    // Selects an utxo as a reference to parametrize the contracts
     const utxos = await state.lucid?.wallet.getUtxos()!;
 
     const utxo = utxos[0];
+
     const outputReference = {
       txHash: utxo.txHash,
       outputIndex: utxo.outputIndex,
@@ -90,7 +90,7 @@ const Home: NextPage<{
 
     const contracts = applyParams(state.tokenName, outputReference, validators, state.lucid!);
 
-    mergeSpecs({ parameterizedContracts: contracts });
+    mergeSpecs({ utxoTxHash: utxo.txHash, utxoOutputIndex: utxo.outputIndex, parameterizedContracts: contracts });
   };
 
   const createGiftCard = async (e: Event) => {
@@ -128,20 +128,15 @@ const Home: NextPage<{
 
         const success = await state.lucid!.awaitTx(txHash);
 
-        // Generates the token from the form data
-        const response = await postGenerateToken(
-          state.parameterizedContracts!.lockAddress,
-          state.tokenName,
-          state.parameterizedContracts!.giftCard.script,
-          state.parameterizedContracts!.redeem.script,
-          state.parameterizedContracts!.policyId,
-          state.signingSecret
-        );
-
-        const token = response.data?.token;
+        // builds the redeem url
+        const url = new URL(BASE_URL);
+        url.searchParams.append("lockAddress", state.parameterizedContracts!.lockAddress);
+        url.searchParams.append("txHash", state.utxoTxHash!);
+        url.searchParams.append("outputIndex", state.utxoOutputIndex?.toString()!);
+        url.searchParams.append("tokenName", state.tokenName!);
 
         // Updates the state with the generated link
-        mergeSpecs({ jwt: token });
+        mergeSpecs({ url: url.href });
 
         // Wait a little bit longer so ExhaustedUTxOError doesn't happen
         // in the next Tx
@@ -163,10 +158,10 @@ const Home: NextPage<{
   return (
     <>
       <div className="h-fill flex flex-col items-center pt-24 pb-24">
-        <h2 className="text-gray-600 title-lg">Make a one shot minting and lock contract</h2>
+        <h2 className="text-gray-600 title-lg">Make a one-shot Minting and Lock Contract</h2>
 
         {state.lucid ? (
-          <div className="box-border mt-6 wrapper-wide p-12">
+          <div className="box-slate mt-6 wrapper-wide p-12">
             <form onSubmit={(e: any) => submitTokenName(e)}>
               <TextField
                 name="tokenName"
@@ -176,26 +171,23 @@ const Home: NextPage<{
                 onInput={(e: any) => mergeSpecs({ tokenName: e.currentTarget.value })}
               />
 
-              <button className="btn-primary mt-2" type="submit" disabled={!state.tokenName}>
+              <button className="btn-primary" type="submit" disabled={!state.tokenName}>
                 Make Contracts
               </button>
             </form>
           </div>
         ) : (
-          <>
-            {state.error ? (
-              <div className="box-red mt-4">
-                <p className="text-red-500">{state.error}</p>
-              </div>
-            ) : (
-              <p className="bg-slate-100 p-6 rounded-md m-12">Initializing</p>
-            )}
-          </>
+          <>{state.error ? <></> : <p className="bg-slate-100 p-6 rounded-md m-12">Initializing</p>}</>
+        )}
+        {state.error && (
+          <div className="box-red mt-4">
+            <p className="text-red-500">{state.error}</p>
+          </div>
         )}
         {state.lucid && state.parameterizedContracts && (
           <>
-            <div className="box-border mt-6 wrapper-wide p-12">
-              <h3 className="mt-4 mb-2 text-gray-400">Redeem</h3>
+            <div className="box-slate mt-6 wrapper-wide p-12">
+              <h3 className="mb-2 text-gray-400">Redeem</h3>
               <pre className="bg-slate-200 p-2 rounded overflow-x-scroll">
                 {state.parameterizedContracts.redeem.script}
               </pre>
@@ -205,7 +197,7 @@ const Home: NextPage<{
                 {state.parameterizedContracts.giftCard.script}
               </pre>
             </div>
-            <div className="box-border mt-6 wrapper-wide p-12">
+            <div className="box-slate mt-6 wrapper-wide p-12">
               <TextField
                 name="giftADA"
                 label="ADA Amount"
@@ -225,19 +217,15 @@ const Home: NextPage<{
 
               {state.lockTxHash && (
                 <>
-                  <div className="box-border mt-6 w-full">
-                    <h3 className="mt-4 mb-2 text-gray-400">ADA Locked</h3>
-                    <p>{state.lockTxHash}</p>
-                  </div>
+                  <h3 className="mt-4 mb-2 text-gray-400">ADA Locked</h3>
+                  <pre className="bg-slate-200 p-2 rounded overflow-x-scroll">{state.lockTxHash}</pre>
                 </>
               )}
 
-              {state.jwt && (
+              {state.url && (
                 <>
-                  <div className="box-border mt-6 w-full">
-                    <h3 className="mt-4 mb-2 text-gray-400">Redeem with code</h3>
-                    <pre className="bg-slate-200 p-2 rounded overflow-x-scroll">{state.jwt}</pre>
-                  </div>
+                  <h3 className="mt-4 mb-2 text-gray-400">Redeem with URL</h3>
+                  <pre className="bg-slate-200 p-2 rounded overflow-x-scroll">{state.url}</pre>
                 </>
               )}
             </div>

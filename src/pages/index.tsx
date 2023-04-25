@@ -1,12 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
-import { TextField } from "@/components/Input";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useState } from "react";
 
 const Home: NextPage = () => {
   const router = useRouter();
-  const [token, setToken] = useState('');
 
   return (
     <>
@@ -14,16 +10,10 @@ const Home: NextPage = () => {
         <p className="text-gray-600 mt-6 title-lg">Aiken Gift Card Example</p>
         <div className="wrapper-xs box-slate flex flex-col text-center items-center p-12 mt-6">
           
-          <button className="btn-primary items-center" onClick={() => router.push("/gift-card-create")}>
+          <button className="btn-primary items-center" onClick={() => router.push("/create")}>
             Create Gift Card
           </button>
 
-          <div className="box-border p-6 flex flex-col mt-12 items-center">
-          <TextField name="token" label="Token" placeholder="" description="" onInput={(e: any) => setToken(e.currentTarget.value)}/>
-          <button className="btn-primary items-center" onClick={() => router.push(`/gift-card-redeem?token=${token}`)} disabled={!token}>
-            Redeem Gift Card
-          </button>
-          </div>
         </div>
 
         <div className="flex mt-4 items-center">

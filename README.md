@@ -20,9 +20,7 @@
 
 ## What's This?
 
-This is an example of a gift card. With these contracts you can lock anything
-and have it be unlockable only with a simultaneously minted NFT. This minted NFT
-holds the power to unlock the assets and is considered the "gift card".
+This is an example of a gift card. With these contracts you can lock anything and have it be unlockable only with a simultaneously minted NFT. This minted NFT holds the power to unlock the assets and is considered the "gift card".
 
 This starter kit is based on the `Gift Card` example provided in the [Aiken documentation](https://aiken-lang.org/), adapted to work seamless with the Ogmios and Kupo instance provided by [Demeter](https://demeter.run) and implemented as a NextJS application. 
 
@@ -43,10 +41,7 @@ Setup the required ENV variables for initializing Lucid with Kupos and Ogmios. I
 
 `KUPO_RUL`
 `OGMIOS_URL`
-
-You also need to setup a secret for signing you redeem codes 
-
-`SIGNING_SECRET`
+`NETWORK`
 
 Once you configuration is set you can start the project:
 
@@ -71,15 +66,14 @@ Once the contracts are applied you will get the Gift Card and Redeem Scripts and
 
 Once you are ready press the `CREATE GIFT CARD` button. You will be prompted to sign the transaction and the app will wait for the tx to be confirmed. 
 
-Once confirmed you will get the `tx hash` and a `redeem code`
+Once confirmed you will get the `tx hash` and the `redeem URL`. The owner of the minted NFT can unlock the ADA in the contract by accessing this URL.
 
 <img src="public/ada-locked.png" alt="ada-locked">
 
-Copy the redeem code. You can share this code for redeeming the gift card. This token has an expiration of 1 hour. If the gift card is not redeemed in within the hour you will not be able to unlock it.
 
 ### Redeem Gift Card
 
-For redeeming a gift card paste the generated code in the token input field of the home page and press the `REDEEM GIFT CARD` button.
+For redeeming a Gift card you can access the URL generated at the moment of locking ADA, if you are the owner of the minted NFT you will be able to unlock the ADA in the contract.
 
 <img src="public/redeem.png" alt="redeem">
 

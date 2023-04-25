@@ -1,35 +1,30 @@
-/* eslint-disable @next/next/no-img-element */
-
+import { Validators, applyParams, readValidators } from "@/utils";
 import { Constr, Data, Kupmios, Lucid, Network, fromText } from "lucid-cardano";
 import type { NextPage } from "next";
-import { verify } from "njwt";
 import { useCallback, useEffect, useState } from "react";
 
-export async function getServerSideProps(context: { query: { token: string } }) {
-  const { token } = context.query;
+export async function getServerSideProps(context: {
+  query: { lockAddress: string; txHash: string; outputIndex: string; tokenName: string };
+}) {
+  const { lockAddress, txHash, outputIndex, tokenName } = context.query;
 
-  // Verifies token signature for getting the encoded claims
-  const jwt = verify(token, process.env.SIGNING_SECRET);
-
-  const body = jwt?.body.toJSON();
-
-  if (!body) return;
+  const validators = readValidators();
 
   // Gets the env variables for Kupo and Ogmios URL
   const ENV = {
-    KUPO_URL: (process.env.KUPO_RUL as string) || "https://kupo-preview-api-alala-f98d7b.us1.demeter.builders",
-    OGMIOS_URL: (process.env.OGMIOS_URL as string) || "wss://ogmios-preview-api-alala-f98d7b.us1.demeter.builders",
-    NETWORK: (process.env.NETWORK as string) || "Preview",
+    KUPO_URL: process.env.KUPO_RUL as string,
+    OGMIOS_URL: process.env.OGMIOS_URL as string,
+    NETWORK: process.env.NETWORK as string,
   };
 
   return {
     props: {
       ENV,
-      lockAddress: body["lockAddress"]?.toString(),
-      tokenName: body["tokenName"]?.toString(),
-      giftCard: body["giftCard"]?.toString(),
-      redeem: body["redeem"]?.toString(),
-      policyId: body["policyId"]?.toString(),
+      lockAddress,
+      txHash,
+      outputIndex: Number(outputIndex),
+      tokenName,
+      validators,
     },
   };
 }
@@ -37,10 +32,9 @@ export async function getServerSideProps(context: { query: { token: string } }) 
 type State = {
   lucid: Lucid | undefined;
   lockAddress: string;
+  txHash: string;
+  outputIndex: number;
   tokenName: string;
-  giftCard: string;
-  redeem: string;
-  policyId: string;
   unlockTxHash: string | undefined;
   waitingUnlockTx: boolean;
   error: string | undefined;
@@ -49,18 +43,17 @@ type State = {
 const Home: NextPage<{
   ENV: Record<string, string>;
   lockAddress: string;
+  txHash: string;
+  outputIndex: number;
   tokenName: string;
-  giftCard: string;
-  redeem: string;
-  policyId: string;
-}> = ({ ENV, lockAddress, tokenName, giftCard, redeem, policyId }) => {
+  validators: Validators;
+}> = ({ ENV, lockAddress, txHash, outputIndex, tokenName, validators }) => {
   const [state, setState] = useState<State>({
     lucid: undefined,
     lockAddress,
+    txHash,
+    outputIndex,
     tokenName,
-    giftCard,
-    redeem,
-    policyId,
     unlockTxHash: undefined,
     waitingUnlockTx: false,
     error: undefined,
@@ -87,24 +80,43 @@ const Home: NextPage<{
     initLucid();
   }, [ENV, mergeSpecs]);
 
+  const makeContracts = async () => {
+    const outputReference = {
+      txHash: state.txHash,
+      outputIndex: state.outputIndex,
+    };
+
+    const contracts = applyParams(state.tokenName, outputReference, validators, state.lucid!);
+
+    return contracts;
+  };
+
   const redeemGiftCard = async (e: Event) => {
     e.preventDefault();
 
-    mergeSpecs({ waitingUnlockTx: true });
+    mergeSpecs({ error: "", waitingUnlockTx: true });
 
     try {
-      const utxos = await state.lucid!.utxosAt(state.lockAddress);
+      const contracts = await makeContracts();
 
-      const assetName = `${state.policyId}${fromText(state.tokenName || "")}`;
+      if (!contracts) throw new Error(`unable to initialize contracts`);
+
+      const assetName = `${contracts.policyId}${fromText(state.tokenName || "")}`;
 
       // Action::Burn
       const burnRedeemer = Data.to(new Constr(1, []));
 
+      const utxos = await state.lucid!.utxosAt(state.lockAddress);
+
+      console.log(utxos);
+
+      if (!utxos.length) throw new Error(`gift card is empty`);
+
       const tx = await state
         .lucid!.newTx()
         .collectFrom(utxos, Data.void())
-        .attachMintingPolicy({ type: "PlutusV2", script: state.giftCard })
-        .attachSpendingValidator({ type: "PlutusV2", script: state.redeem })
+        .attachMintingPolicy(contracts.giftCard)
+        .attachSpendingValidator(contracts.redeem)
         .mintAssets({ [assetName]: BigInt(-1) }, burnRedeemer)
         .complete();
 
@@ -116,11 +128,9 @@ const Home: NextPage<{
 
       mergeSpecs({ waitingUnlockTx: false });
 
-      if (success) {
-        mergeSpecs({ unlockTxHash: txHash });
-      }
-    } catch {
-      mergeSpecs({ waitingUnlockTx: false });
+      if (success) mergeSpecs({ unlockTxHash: txHash });
+    } catch (err: any) {
+      mergeSpecs({ error: err, waitingUnlockTx: false });
     }
   };
 
@@ -131,34 +141,31 @@ const Home: NextPage<{
 
         {state.lucid ? (
           <>
-            <div className="box-border mt-6 wrapper-wide p-12 items-center">
+            <div className="wrapper-wide box-slate flex flex-col text-center items-center p-12 mt-6">
               <button
-                className="btn-primary mt-4 mx-auto"
+                className="btn-primary mx-auto"
                 type="button"
                 onClick={(e: any) => redeemGiftCard(e)}
-                disabled={!!state.unlockTxHash}
+                disabled={!!state.unlockTxHash || state.waitingUnlockTx}
               >
                 {state.waitingUnlockTx ? "Waiting for Tx..." : "Redeem Gift Card (Unlocks ADA)"}
               </button>
-            </div>
 
-            {state.unlockTxHash && (
-              <div className="box-border mt-6 wrapper-wide p-12">
-                <h3 className="mt-4 mb-2 text-gray-400">ADA Unlocked</h3>
-                <p>{state.unlockTxHash}</p>
-              </div>
-            )}
+              {state.unlockTxHash && (
+                <>
+                  <h3 className="mt-12 mb-2 text-gray-400">ADA Unlocked</h3>
+                  <pre className="bg-slate-200 p-2 rounded overflow-x-scroll">{state.unlockTxHash}</pre>
+                </>
+              )}
+            </div>
           </>
         ) : (
-          <>
-            {state.error ? (
-              <div className="box-red mt-4">
-                <p className="text-red-500">{state.error}</p>
-              </div>
-            ) : (
-              <p className="bg-slate-100 p-6 rounded-md m-12">Initializing</p>
-            )}
-          </>
+          <>{state.error ? <></> : <p className="bg-slate-100 p-6 rounded-md m-12">Initializing</p>}</>
+        )}
+        {state.error && (
+          <div className="box-red mt-4">
+            <p className="text-red-500">{state.error}</p>
+          </div>
         )}
       </div>
     </>
