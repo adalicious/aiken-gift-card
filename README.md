@@ -37,20 +37,50 @@ Reference the official documentation for details about how this starter kit was 
 
 ## Usage
 
-Setup the required ENV variables for initializing Lucid with Kupos and Ogmios. If you are running this on Demeter you can get those variables by enabling the required Extensions and exposing the Port or using the Private DNS if you are running from a Cardano Workspace.
+Setup the required ENV variables for initializing Lucid with Kupos and Ogmios. 
 
-`KUPO_RUL`
-`OGMIOS_URL`
-`NETWORK`
+ - `KUPO_URL`
+ - `OGMIOS_URL`
+ - `NETWORK`
 
+We are going to need these extensions to be enabled in your Demeter project:
+
+<img src="public/extensions.png"  alt="extensions">
+
+You have the option to run this application from inside a `Cardano Workspace` or by exposing the extensions to external dApps. 
+
+When running from a `Cardano Workspace` you can default the ENV variables to the information already available in your Workspace.
+
+ - `KUPO_URL`: `KUPO_API_HOST:KUPO_API_PORT`
+ - `OGMIOS_URL`: `OGMIOS_API_HOST:OGMIOS_API_PORT`
+
+When running from your local environment make sure you are exposing the extension to be available for external dApps. The URL provided should be the value to set in your ENVs. 
+
+<img src="public/expose-port.png"  alt="expose-port">
+
+**_NOTE:_** Don't forget to add the protocol to the URL when setting up your ENV. Kupo will be exposed under `https` and Ogmios under `wss` 
+
+For the `NETWORK` ENV variable the possible values are:
+ - `Preview`
+ - `Preprod`
+ - `Mainnet`
+  
 Once you configuration is set you can start the project:
 
+Install the dependencies
+```bash
+npm install
 ```
+
+Build an run the application in development mode
+```bash
 npm run build
 npm run dev
 ```
 
-You can access the front-end application in your browser at `localhost:3000` 
+You can access the front-end application in your browser at `localhost:3000` . 
+
+**_NOTE:_** If you are running the application from inside a Cardano Workspace in Demeter you will have to export the port 3000 for accessing the app in your browser. 
 
 <img src="public/home.png"  alt="home">
 
