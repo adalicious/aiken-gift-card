@@ -47,14 +47,9 @@ We are going to need these extensions to be enabled in your Demeter project:
 
 <img src="public/extensions.png"  alt="extensions">
 
-You have the option to run this application from inside a `Cardano Workspace` or by exposing the extensions to external dApps. 
+For more information about how to manage the extension in your project check the [documentation](https://docs.demeter.run/guides/extensions)
 
-When running from a `Cardano Workspace` you can default the ENV variables to the information already available in your Workspace.
-
- - `KUPO_URL`: `KUPO_API_HOST:KUPO_API_PORT`
- - `OGMIOS_URL`: `OGMIOS_API_HOST:OGMIOS_API_PORT`
-
-When running from your local environment make sure you are exposing the extension to be available for external dApps. The URL provided should be the value to set in your ENVs. 
+After the extension is enabled, make sure you are exposing the `Http Port` to be available for external dApps. The URL provided should be the value to set in your ENVs. 
 
 <img src="public/expose-port.png"  alt="expose-port">
 
@@ -80,7 +75,7 @@ npm run dev
 
 You can access the front-end application in your browser at `localhost:3000` . 
 
-**_NOTE:_** If you are running the application from inside a Cardano Workspace in Demeter you will have to export the port 3000 for accessing the app in your browser. 
+**_NOTE:_** If you are running the application from inside a Cardano Workspace in Demeter you will have to expose the port 3000 for accessing the app in your browser. Make sure you replace the constant value `BASE_URL` defined in `create.tsx` with the URL provided by Demeter in your exposed port. ie: `const BASE_URL = "{URL provided by Demeter}/redeem";`
 
 <img src="public/home.png"  alt="home">
 
